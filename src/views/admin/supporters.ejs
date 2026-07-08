@@ -1,0 +1,52 @@
+<div class="container wide">
+  <h1>Supporters &amp; Admins</h1>
+  <% if (error) { %><div class="error"><%= error %></div><% } %>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.name %></td>
+            <td><%= u.email %></td>
+            <td>
+              <form method="POST" action="/admin/supporters/<%= u.id %>/role">
+                <select name="role" onchange="this.form.submit()">
+                  <option value="supporter" <%= u.role === 'supporter' ? 'selected' : '' %>>supporter</option>
+                  <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>admin</option>
+                </select>
+              </form>
+            </td>
+            <td><%= u.active ? 'Yes' : 'No' %></td>
+            <td>
+              <form method="POST" action="/admin/supporters/<%= u.id %>/toggle-active">
+                <button type="submit" class="small <%= u.active ? 'danger' : '' %>"><%= u.active ? 'Deactivate' : 'Activate' %></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:20px; max-width:420px;">
+    <h2>Add supporter/admin</h2>
+    <form method="POST" action="/admin/supporters">
+      <label>Name</label>
+      <input type="text" name="name" required>
+      <label>Email</label>
+      <input type="email" name="email" required>
+      <label>Password</label>
+      <input type="password" name="password" required>
+      <label>Role</label>
+      <select name="role">
+        <option value="supporter">supporter</option>
+        <option value="admin">admin</option>
+      </select>
+      <div style="margin-top:16px;">
+        <button type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+</div>

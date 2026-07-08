@@ -1,0 +1,20 @@
+<div class="container" style="max-width:520px;">
+  <div class="card">
+    <h1>Contact Support</h1>
+    <p class="muted">Tell us what's going on and someone will get back to you.</p>
+    <% if (error) { %><div class="error"><%= error %></div><% } %>
+    <form method="POST" action="/tickets">
+      <label>Your name</label>
+      <input type="text" name="name" required value="<%= values.name || '' %>">
+      <label>Your email</label>
+      <input type="email" name="email" required value="<%= values.email || '' %>">
+      <label>Subject</label>
+      <input type="text" name="subject" required value="<%= values.subject || '' %>">
+      <label>Message</label>
+      <textarea name="message" rows="6" required><%= values.message || '' %></textarea>
+      <div style="margin-top:20px;">
+        <button type="submit">Submit ticket</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<div class="container wide">
+  <h1>AI</h1>
+  <% if (error) { %><div class="error"><%= error %></div><% } %>
+
+  <div class="card">
+    <h2>Settings</h2>
+    <form method="POST" action="/admin/ai/settings">
+      <label><input type="checkbox" name="ai_enabled" <%= settings.ai_enabled === 'true' ? 'checked' : '' %>> Enable AI drafting</label>
+      <label><input type="checkbox" name="ai_auto_send" <%= settings.ai_auto_send === 'true' ? 'checked' : '' %>> Auto-send AI replies (off = supporter must approve first)</label>
+      <label>Model</label>
+      <input type="text" name="ai_model" value="<%= settings.ai_model %>">
+      <label>System prompt</label>
+      <textarea name="ai_system_prompt" rows="5"><%= settings.ai_system_prompt %></textarea>
+      <div style="margin-top:16px;">
+        <button type="submit">Save settings</button>
+      </div>
+    </form>
+    <p class="muted" style="margin-top:12px;">Requires <code>OPENAI_API_KEY</code> to be set in the server's <code>.env</code> file.</p>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2>Tools</h2>
+    <p class="muted">Tools are exposed to the AI via OpenAI function calling. <strong>http</strong> tools call a configured endpoint (safe: no code execution). <strong>js</strong> tools run admin-provided JS on the server — only add these if you trust whoever can edit them.</p>
+    <p class="muted">The AI always also has a built-in <code>close_ticket</code> tool it can call when it decides a ticket needs no further reply — that name is reserved and can't be reused here.</p>
+    <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Enabled</th><th></th></tr></thead>
+      <tbody>
+        <% tools.forEach(t => { %>
+          <tr>
+            <td><%= t.name %><br><span class="muted"><%= t.description %></span></td>
+            <td><%= t.type %></td>
+            <td><%= t.enabled ? 'Yes' : 'No' %></td>
+            <td style="white-space:nowrap;">
+              <form method="POST" action="/admin/ai/tools/<%= t.id %>/toggle" style="display:inline;">
+                <button type="submit" class="small secondary"><%= t.enabled ? 'Disable' : 'Enable' %></button>
+              </form>
+              <form method="POST" action="/admin/ai/tools/<%= t.id %>/delete" style="display:inline;">
+                <button type="submit" class="small danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2>Add tool</h2>
+    <form method="POST" action="/admin/ai/tools">
+      <label>Name (used as the function name shown to the model)</label>
+      <input type="text" name="name" required placeholder="lookup_order">
+      <label>Description</label>
+      <input type="text" name="description" placeholder="Looks up an order by id">
+      <label>Type</label>
+      <select name="type">
+        <option value="http">http — config-driven request</option>
+        <option value="js">js — sandboxed code (admin-trusted only)</option>
+      </select>
+      <label>Parameter schema (JSON Schema, used for OpenAI function calling)</label>
+      <textarea name="schema_json" rows="4">{"type":"object","properties":{"orderId":{"type":"string"}},"required":["orderId"]}</textarea>
+      <label>Config JSON</label>
+      <textarea name="config_json" rows="4" placeholder='http: {"method":"GET","url":"https://api.example.com/orders/{{orderId}}","headers":{}}&#10;js: {"code":"return { total: 42 };"}'></textarea>
+      <div style="margin-top:16px;">
+        <button type="submit">Add tool</button>
+      </div>
+    </form>
+  </div>
+</div>

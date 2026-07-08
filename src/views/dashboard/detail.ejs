@@ -1,0 +1,56 @@
+<% const statusLabels = { open: 'Open', ai_replied: 'AI Replied', replied: 'Replied', closed: 'Closed' }; %>
+<div class="container wide">
+  <a href="/dashboard" class="muted">&larr; Back to tickets</a>
+  <h1>#<%= ticket.id %> — <%= ticket.subject %> <span class="badge <%= ticket.status %>"><%= statusLabels[ticket.status] || ticket.status %></span></h1>
+  <p class="muted"><%= ticket.customer_name %> &lt;<%= ticket.customer_email %>&gt; &middot; via <%= ticket.channel %></p>
+
+  <div class="toolbar">
+    <form method="POST" action="/dashboard/tickets/<%= ticket.id %>/status">
+      <select name="status" onchange="this.form.submit()">
+        <% ['open','ai_replied','replied','closed'].forEach(s => { %>
+          <option value="<%= s %>" <%= ticket.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option>
+        <% }) %>
+      </select>
+    </form>
+    <form method="POST" action="/dashboard/tickets/<%= ticket.id %>/assign">
+      <select name="assigned_to" onchange="this.form.submit()">
+        <option value="">Unassigned</option>
+        <% supporters.forEach(s => { %>
+          <option value="<%= s.id %>" <%= ticket.assigned_to === s.id ? 'selected' : '' %>><%= s.name %></option>
+        <% }) %>
+      </select>
+    </form>
+  </div>
+
+  <div class="card thread" data-poll="thread" data-ticket-id="<%= ticket.id %>" data-last-id="<%= messages.length ? messages[messages.length - 1].id : 0 %>">
+    <% messages.forEach(m => { %>
+      <div class="msg <%= m.sender_type %>">
+        <div class="meta">
+          <%= m.sender_type === 'ai' ? (m.is_ai_draft ? 'AI (draft — awaiting approval)' : 'AI') : m.sender_type === 'supporter' ? (m.sender_name || 'Supporter') : m.sender_type === 'customer' ? 'Customer' : 'System' %>
+          &middot; <%= m.created_at %>
+        </div>
+        <div class="body"><%= m.body %></div>
+        <% if (m.sender_type === 'ai' && m.is_ai_draft) { %>
+          <form method="POST" action="/dashboard/tickets/<%= ticket.id %>/drafts/<%= m.id %>/approve" style="margin-top:10px;">
+            <textarea name="body" rows="4"><%= m.body %></textarea>
+            <div style="margin-top:8px; display:flex; gap:8px;">
+              <button type="submit">Send</button>
+              <button type="submit" formaction="/dashboard/tickets/<%= ticket.id %>/drafts/<%= m.id %>/discard" class="secondary">Discard</button>
+            </div>
+          </form>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <form method="POST" action="/dashboard/tickets/<%= ticket.id %>/reply">
+      <label>Reply</label>
+      <textarea name="body" rows="4" required placeholder="Write a reply to the customer..."></textarea>
+      <div style="margin-top:10px;">
+        <button type="submit">Send reply</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="/js/poll.js"></script>

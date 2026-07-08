@@ -1,0 +1,36 @@
+<% const statusLabels = { open: 'Open', ai_replied: 'AI Replied', replied: 'Replied', closed: 'Closed' }; %>
+<div class="container wide">
+  <h1>Tickets</h1>
+  <div class="tabs">
+    <a href="/dashboard" class="<%= !status ? 'active' : '' %>">All</a>
+    <a href="/dashboard?status=open" class="<%= status === 'open' ? 'active' : '' %>">Open</a>
+    <a href="/dashboard?status=ai_replied" class="<%= status === 'ai_replied' ? 'active' : '' %>">AI Replied</a>
+    <a href="/dashboard?status=replied" class="<%= status === 'replied' ? 'active' : '' %>">Replied</a>
+    <a href="/dashboard?status=closed" class="<%= status === 'closed' ? 'active' : '' %>">Closed</a>
+  </div>
+
+  <div class="card" data-poll="list" data-status="<%= status || '' %>" data-signature="<%= tickets.map(t => `${t.id}:${t.status}:${t.updated_at}`).join('|') %>">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Subject</th><th>Customer</th><th>Channel</th><th>Status</th><th>Assigned</th><th>Updated</th></tr>
+      </thead>
+      <tbody>
+        <% if (!tickets.length) { %>
+          <tr><td colspan="7" class="muted">No tickets here.</td></tr>
+        <% } %>
+        <% tickets.forEach(t => { %>
+          <tr class="ticket-row" onclick="location.href='/dashboard/tickets/<%= t.id %>'">
+            <td>#<%= t.id %></td>
+            <td><%= t.subject %></td>
+            <td><%= t.customer_name %><br><span class="muted"><%= t.customer_email %></span></td>
+            <td><%= t.channel %></td>
+            <td><span class="badge <%= t.status %>"><%= statusLabels[t.status] || t.status %></span></td>
+            <td><%= t.assigned_name || '—' %></td>
+            <td class="muted"><%= t.updated_at %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script src="/js/poll.js"></script>

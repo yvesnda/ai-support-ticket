@@ -1,0 +1,22 @@
+<div class="container wide">
+  <h1>Plugins</h1>
+  <% if (error) { %><div class="error"><%= error %></div><% } %>
+  <p class="muted">Each ticket source is a plugin. The built-in <strong>email</strong> plugin polls an IMAP inbox and sends replies via SMTP. Drop a new folder under <code>src/plugins/</code> implementing <code>{ name, start(ctx), stop(), sendReply(ticket, message) }</code> to add SMS, Instagram, etc.</p>
+
+  <% plugins.forEach(p => { %>
+    <div class="card" style="margin-bottom:20px;">
+      <h2><%= p.name %> <span class="badge <%= p.running ? 'resolved' : 'closed' %>"><%= p.running ? 'running' : 'stopped' %></span></h2>
+      <form method="POST" action="/admin/plugins/<%= p.name %>">
+        <label><input type="checkbox" name="enabled" <%= p.settings && p.settings.enabled ? 'checked' : '' %>> Enabled</label>
+        <label>Config (JSON)</label>
+        <textarea name="config_json" rows="8"><%= p.settings ? p.settings.config_json : '{}' %></textarea>
+        <% if (p.name === 'email') { %>
+          <p class="muted">Expected keys: imapHost, imapPort, imapSecure, imapUser, imapPass, mailbox, pollIntervalMs, smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, fromAddress</p>
+        <% } %>
+        <div style="margin-top:16px;">
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  <% }) %>
+</div>

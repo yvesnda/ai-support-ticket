@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' · Supporter' : 'Supporter' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <% if (typeof hideNav === 'undefined' || !hideNav) { %>
+  <div class="nav">
+    <span class="brand">Supporter</span>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <a href="/dashboard">Tickets</a>
+      <% if (user.role === 'admin') { %>
+        <a href="/admin/supporters">Supporters</a>
+        <a href="/admin/ai">AI</a>
+        <a href="/admin/plugins">Plugins</a>
+      <% } %>
+      <span class="role-badge"><%= user.role %></span>
+      <span class="muted"><%= user.name %></span>
+      <form method="POST" action="/logout" style="margin:0;">
+        <button type="submit" class="secondary small">Logout</button>
+      </form>
+    <% } %>
+  </div>
+  <% } %>
+  <%- body %>
+</body>
+</html>
