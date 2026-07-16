@@ -10,30 +10,34 @@ const DEFAULTS = {
   ai_auto_send: 'false',
 };
 
-function get(key) {
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+async function get(key) {
+  const row = await db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
   return row ? row.value : DEFAULTS[key] ?? null;
 }
 
-function getAll() {
-  const rows = db.prepare('SELECT key, value FROM settings').all();
+async function getAll() {
+  const rows = await db.prepare('SELECT key, value FROM settings').all();
   const map = { ...DEFAULTS };
   for (const r of rows) map[r.key] = r.value;
   return map;
 }
 
-function set(key, value) {
-  db.prepare(
+async function set(key, value) {
+  await db.prepare(
     `INSERT INTO settings (key, value) VALUES (?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`
   ).run(key, value);
 }
 
-function setMany(obj) {
-  const tx = db.transaction((entries) => {
-    for (const [k, v] of Object.entries(entries)) set(k, v);
-  });
-  tx(obj);
+async function setMany(obj) {
+  await db.exec('BEGIN');
+  try {
+    for (const [k, v] of Object.entries(obj)) await set(k, v);
+    await db.exec('COMMIT');
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    throw err;
+  }
 }
 
 module.exports = { get, getAll, set, setMany, DEFAULTS };

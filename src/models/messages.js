@@ -1,7 +1,7 @@
 const { db } = require('../db');
 
-function create({ ticket_id, sender_type, sender_id = null, body, is_ai_draft = false }) {
-  const info = db
+async function create({ ticket_id, sender_type, sender_id = null, body, is_ai_draft = false }) {
+  const info = await db
     .prepare(
       `INSERT INTO messages (ticket_id, sender_type, sender_id, body, is_ai_draft)
        VALUES (?, ?, ?, ?, ?)`
@@ -10,11 +10,11 @@ function create({ ticket_id, sender_type, sender_id = null, body, is_ai_draft = 
   return findById(info.lastInsertRowid);
 }
 
-function findById(id) {
+async function findById(id) {
   return db.prepare('SELECT * FROM messages WHERE id = ?').get(id);
 }
 
-function listForTicket(ticket_id) {
+async function listForTicket(ticket_id) {
   return db
     .prepare(
       `SELECT m.*, u.name AS sender_name
@@ -24,7 +24,7 @@ function listForTicket(ticket_id) {
     .all(ticket_id);
 }
 
-function listSince(ticket_id, afterId) {
+async function listSince(ticket_id, afterId) {
   return db
     .prepare(
       `SELECT m.*, u.name AS sender_name
@@ -34,24 +34,24 @@ function listSince(ticket_id, afterId) {
     .all(ticket_id, afterId || 0);
 }
 
-function markSent(id) {
-  db.prepare('UPDATE messages SET is_ai_draft = 0 WHERE id = ?').run(id);
+async function markSent(id) {
+  await db.prepare('UPDATE messages SET is_ai_draft = 0 WHERE id = ?').run(id);
 }
 
-function findByMessageId(message_id) {
+async function findByMessageId(message_id) {
   return db.prepare('SELECT * FROM messages WHERE message_id = ?').get(message_id);
 }
 
-function setMessageId(id, message_id) {
-  db.prepare('UPDATE messages SET message_id = ? WHERE id = ?').run(message_id, id);
+async function setMessageId(id, message_id) {
+  await db.prepare('UPDATE messages SET message_id = ? WHERE id = ?').run(message_id, id);
 }
 
-function updateBody(id, body) {
-  db.prepare('UPDATE messages SET body = ? WHERE id = ?').run(body, id);
+async function updateBody(id, body) {
+  await db.prepare('UPDATE messages SET body = ? WHERE id = ?').run(body, id);
 }
 
-function remove(id) {
-  db.prepare('DELETE FROM messages WHERE id = ?').run(id);
+async function remove(id) {
+  await db.prepare('DELETE FROM messages WHERE id = ?').run(id);
 }
 
 module.exports = { create, findById, listForTicket, listSince, markSent, updateBody, remove, findByMessageId, setMessageId };

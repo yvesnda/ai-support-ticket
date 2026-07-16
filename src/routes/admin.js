@@ -13,43 +13,43 @@ router.use(requireRole('admin'));
 
 // --- Supporters ---
 
-router.get('/admin/supporters', (req, res) => {
-  res.render('admin/supporters', { users: usersModel.listAll(), error: null });
+router.get('/admin/supporters', async (req, res) => {
+  res.render('admin/supporters', { users: await usersModel.listAll(), error: null });
 });
 
-router.post('/admin/supporters', (req, res) => {
+router.post('/admin/supporters', async (req, res) => {
   const { name, email, password, role } = req.body;
   if (!name || !email || !password) {
-    return res.status(400).render('admin/supporters', { users: usersModel.listAll(), error: 'All fields are required.' });
+    return res.status(400).render('admin/supporters', { users: await usersModel.listAll(), error: 'All fields are required.' });
   }
-  if (usersModel.findByEmail(email.trim())) {
-    return res.status(400).render('admin/supporters', { users: usersModel.listAll(), error: 'A user with that email already exists.' });
+  if (await usersModel.findByEmail(email.trim())) {
+    return res.status(400).render('admin/supporters', { users: await usersModel.listAll(), error: 'A user with that email already exists.' });
   }
   const password_hash = bcrypt.hashSync(password, 10);
-  usersModel.create({ name: name.trim(), email: email.trim(), password_hash, role: role === 'admin' ? 'admin' : 'supporter' });
+  await usersModel.create({ name: name.trim(), email: email.trim(), password_hash, role: role === 'admin' ? 'admin' : 'supporter' });
   res.redirect('/admin/supporters');
 });
 
-router.post('/admin/supporters/:id/toggle-active', (req, res) => {
-  const user = usersModel.findById(req.params.id);
-  if (user) usersModel.setActive(user.id, !user.active);
+router.post('/admin/supporters/:id/toggle-active', async (req, res) => {
+  const user = await usersModel.findById(req.params.id);
+  if (user) await usersModel.setActive(user.id, !user.active);
   res.redirect('/admin/supporters');
 });
 
-router.post('/admin/supporters/:id/role', (req, res) => {
-  usersModel.updateRole(req.params.id, req.body.role === 'admin' ? 'admin' : 'supporter');
+router.post('/admin/supporters/:id/role', async (req, res) => {
+  await usersModel.updateRole(req.params.id, req.body.role === 'admin' ? 'admin' : 'supporter');
   res.redirect('/admin/supporters');
 });
 
 // --- AI settings + tools ---
 
-router.get('/admin/ai', (req, res) => {
-  res.render('admin/ai', { settings: settingsModel.getAll(), tools: aiToolsModel.list(), error: null });
+router.get('/admin/ai', async (req, res) => {
+  res.render('admin/ai', { settings: await settingsModel.getAll(), tools: await aiToolsModel.list(), error: null });
 });
 
-router.post('/admin/ai/settings', (req, res) => {
+router.post('/admin/ai/settings', async (req, res) => {
   const { ai_system_prompt, ai_model, ai_enabled, ai_auto_send } = req.body;
-  settingsModel.setMany({
+  await settingsModel.setMany({
     ai_system_prompt: ai_system_prompt || '',
     ai_model: ai_model || 'gpt-4o-mini',
     ai_enabled: ai_enabled === 'on' ? 'true' : 'false',
@@ -58,12 +58,12 @@ router.post('/admin/ai/settings', (req, res) => {
   res.redirect('/admin/ai');
 });
 
-router.post('/admin/ai/tools', (req, res) => {
+router.post('/admin/ai/tools', async (req, res) => {
   const { name, description, type, schema_json, config_json } = req.body;
   if (name && name.trim() === CLOSE_TICKET_TOOL) {
     return res.status(400).render('admin/ai', {
-      settings: settingsModel.getAll(),
-      tools: aiToolsModel.list(),
+      settings: await settingsModel.getAll(),
+      tools: await aiToolsModel.list(),
       error: `"${CLOSE_TICKET_TOOL}" is a reserved built-in tool name.`,
     });
   }
@@ -72,12 +72,12 @@ router.post('/admin/ai/tools', (req, res) => {
     JSON.parse(config_json || '{}');
   } catch (err) {
     return res.status(400).render('admin/ai', {
-      settings: settingsModel.getAll(),
-      tools: aiToolsModel.list(),
+      settings: await settingsModel.getAll(),
+      tools: await aiToolsModel.list(),
       error: `Invalid JSON: ${err.message}`,
     });
   }
-  aiToolsModel.create({
+  await aiToolsModel.create({
     name: name.trim(),
     description: description || '',
     type: type === 'js' ? 'js' : 'http',
@@ -87,12 +87,12 @@ router.post('/admin/ai/tools', (req, res) => {
   res.redirect('/admin/ai');
 });
 
-router.post('/admin/ai/tools/:id', (req, res) => {
+router.post('/admin/ai/tools/:id', async (req, res) => {
   const { name, description, type, schema_json, config_json } = req.body;
   if (name && name.trim() === CLOSE_TICKET_TOOL) {
     return res.status(400).render('admin/ai', {
-      settings: settingsModel.getAll(),
-      tools: aiToolsModel.list(),
+      settings: await settingsModel.getAll(),
+      tools: await aiToolsModel.list(),
       error: `"${CLOSE_TICKET_TOOL}" is a reserved built-in tool name.`,
     });
   }
@@ -101,12 +101,12 @@ router.post('/admin/ai/tools/:id', (req, res) => {
     JSON.parse(config_json || '{}');
   } catch (err) {
     return res.status(400).render('admin/ai', {
-      settings: settingsModel.getAll(),
-      tools: aiToolsModel.list(),
+      settings: await settingsModel.getAll(),
+      tools: await aiToolsModel.list(),
       error: `Invalid JSON: ${err.message}`,
     });
   }
-  aiToolsModel.update(req.params.id, {
+  await aiToolsModel.update(req.params.id, {
     name: name.trim(),
     description: description || '',
     type: type === 'js' ? 'js' : 'http',
@@ -116,21 +116,21 @@ router.post('/admin/ai/tools/:id', (req, res) => {
   res.redirect('/admin/ai');
 });
 
-router.post('/admin/ai/tools/:id/toggle', (req, res) => {
-  const tool = aiToolsModel.findById(req.params.id);
-  if (tool) aiToolsModel.setEnabled(tool.id, !tool.enabled);
+router.post('/admin/ai/tools/:id/toggle', async (req, res) => {
+  const tool = await aiToolsModel.findById(req.params.id);
+  if (tool) await aiToolsModel.setEnabled(tool.id, !tool.enabled);
   res.redirect('/admin/ai');
 });
 
-router.post('/admin/ai/tools/:id/delete', (req, res) => {
-  aiToolsModel.remove(req.params.id);
+router.post('/admin/ai/tools/:id/delete', async (req, res) => {
+  await aiToolsModel.remove(req.params.id);
   res.redirect('/admin/ai');
 });
 
 // --- Plugins ---
 
-router.get('/admin/plugins', (req, res) => {
-  res.render('admin/plugins', { plugins: pluginManager.list(), error: null });
+router.get('/admin/plugins', async (req, res) => {
+  res.render('admin/plugins', { plugins: await pluginManager.list(), error: null });
 });
 
 router.post('/admin/plugins/:name', async (req, res) => {
@@ -139,11 +139,11 @@ router.post('/admin/plugins/:name', async (req, res) => {
   try {
     JSON.parse(config_json || '{}');
   } catch (err) {
-    return res.status(400).render('admin/plugins', { plugins: pluginManager.list(), error: `Invalid JSON: ${err.message}` });
+    return res.status(400).render('admin/plugins', { plugins: await pluginManager.list(), error: `Invalid JSON: ${err.message}` });
   }
 
   const isEnabled = enabled === 'on';
-  pluginSettingsModel.upsert(name, { config_json, enabled: isEnabled });
+  await pluginSettingsModel.upsert(name, { config_json, enabled: isEnabled });
 
   // Always stop first so a config change while running is picked up cleanly.
   await pluginManager.stopPlugin(name);

@@ -10,14 +10,14 @@ const pluginManager = require('./pluginManager');
 // to this ticket. See src/plugins/email/index.js for why this matters.
 async function sendAndRecord(ticket, msg) {
   const result = await pluginManager.sendReply(ticket, msg);
-  if (result?.messageId) messagesModel.setMessageId(msg.id, result.messageId);
+  if (result?.messageId) await messagesModel.setMessageId(msg.id, result.messageId);
 }
 
 // Single entrypoint used by both the public web form and channel plugins
 // (email, and later SMS/Instagram) to create a new ticket from an inbound message.
 async function createTicket({ subject, customer_name, customer_email, body, channel = 'web', source_plugin = null, external_ref = null }) {
-  const ticket = ticketsModel.create({ subject, customer_name, customer_email, channel, source_plugin, external_ref });
-  messagesModel.create({ ticket_id: ticket.id, sender_type: 'customer', body });
+  const ticket = await ticketsModel.create({ subject, customer_name, customer_email, channel, source_plugin, external_ref });
+  await messagesModel.create({ ticket_id: ticket.id, sender_type: 'customer', body });
   triggerAiDraft(ticket.id).catch((err) => console.error('[ai] draft error:', err.message));
   return ticket;
 }
@@ -27,25 +27,25 @@ async function createTicket({ subject, customer_name, customer_email, body, chan
 // always puts the ticket back in the "open" tag — including reopening one
 // that was previously closed — since it's now waiting on us again.
 async function addCustomerMessage(ticket, body) {
-  messagesModel.create({ ticket_id: ticket.id, sender_type: 'customer', body });
-  ticketsModel.setStatus(ticket.id, 'open');
+  await messagesModel.create({ ticket_id: ticket.id, sender_type: 'customer', body });
+  await ticketsModel.setStatus(ticket.id, 'open');
   triggerAiDraft(ticket.id).catch((err) => console.error('[ai] draft error:', err.message));
 }
 
 async function triggerAiDraft(ticketId) {
-  const ticket = ticketsModel.findById(ticketId);
-  const messages = messagesModel.listForTicket(ticketId);
+  const ticket = await ticketsModel.findById(ticketId);
+  const messages = await messagesModel.listForTicket(ticketId);
   const { reply, closed } = await orchestrator.draftReply(ticket, messages);
 
   if (!reply) {
     // Nothing to say, but the model may still have decided the ticket needs
     // no further reply (e.g. a closing tool call with no new text).
-    if (closed) ticketsModel.setStatus(ticketId, 'closed');
+    if (closed) await ticketsModel.setStatus(ticketId, 'closed');
     return;
   }
 
-  const autoSend = settingsModel.get('ai_auto_send') === 'true';
-  const msg = messagesModel.create({
+  const autoSend = (await settingsModel.get('ai_auto_send')) === 'true';
+  const msg = await messagesModel.create({
     ticket_id: ticketId,
     sender_type: 'ai',
     body: reply,
@@ -54,18 +54,18 @@ async function triggerAiDraft(ticketId) {
 
   if (autoSend) {
     await sendAndRecord(ticket, msg);
-    ticketsModel.setStatus(ticketId, closed ? 'closed' : 'ai_replied');
+    await ticketsModel.setStatus(ticketId, closed ? 'closed' : 'ai_replied');
   } else if (closed) {
-    ticketsModel.setStatus(ticketId, 'closed');
+    await ticketsModel.setStatus(ticketId, 'closed');
   } else {
-    ticketsModel.touch(ticketId);
+    await ticketsModel.touch(ticketId);
   }
 }
 
 // A supporter/admin sends a brand-new reply (not editing an AI draft).
 async function sendSupporterReply(ticket, user, body) {
-  const msg = messagesModel.create({ ticket_id: ticket.id, sender_type: 'supporter', sender_id: user.id, body });
-  ticketsModel.setStatus(ticket.id, 'replied');
+  const msg = await messagesModel.create({ ticket_id: ticket.id, sender_type: 'supporter', sender_id: user.id, body });
+  await ticketsModel.setStatus(ticket.id, 'replied');
   await sendAndRecord(ticket, msg);
   return msg;
 }
@@ -73,17 +73,17 @@ async function sendSupporterReply(ticket, user, body) {
 // A supporter approves (optionally after editing) an AI draft, sending it as-is.
 async function approveAiDraft(ticket, message, editedBody) {
   if (editedBody !== undefined && editedBody !== message.body) {
-    messagesModel.updateBody(message.id, editedBody);
+    await messagesModel.updateBody(message.id, editedBody);
     message = { ...message, body: editedBody };
   }
-  messagesModel.markSent(message.id);
-  ticketsModel.setStatus(ticket.id, 'replied');
+  await messagesModel.markSent(message.id);
+  await ticketsModel.setStatus(ticket.id, 'replied');
   await sendAndRecord(ticket, message);
   return message;
 }
 
-function discardAiDraft(message) {
-  messagesModel.remove(message.id);
+async function discardAiDraft(message) {
+  await messagesModel.remove(message.id);
 }
 
 module.exports = {

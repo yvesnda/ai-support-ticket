@@ -26,12 +26,12 @@ function extractCandidateRefs(parsed) {
 // both the ticket's original external_ref (the customer's first email) and
 // the message_id of every reply we've sent out (since a customer often
 // replies to *our* last message, not their own original one).
-function findTicketForRefs(candidates) {
+async function findTicketForRefs(candidates) {
   for (const ref of candidates) {
-    const ticket = ticketsModel.findByExternalRef(ref);
+    const ticket = await ticketsModel.findByExternalRef(ref);
     if (ticket) return ticket;
 
-    const message = messagesModel.findByMessageId(ref);
+    const message = await messagesModel.findByMessageId(ref);
     if (message) return ticketsModel.findById(message.ticket_id);
   }
   return null;
@@ -65,7 +65,7 @@ async function pollOnce(ctx) {
         const subject = parsed.subject || '(no subject)';
         const messageId = parsed.messageId;
 
-        const existing = findTicketForRefs(extractCandidateRefs(parsed));
+        const existing = await findTicketForRefs(extractCandidateRefs(parsed));
         if (existing) {
           await ticketService.addCustomerMessage(existing, body);
           logger.info(`appended message to ticket #${existing.id} from ${fromAddr}`);

@@ -1,37 +1,38 @@
 const { db } = require('../db');
 
-function count() {
-  return db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+async function count() {
+  const row = await db.prepare('SELECT COUNT(*) AS c FROM users').get();
+  return row.c;
 }
 
-function findByEmail(email) {
+async function findByEmail(email) {
   return db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
 }
 
-function findById(id) {
+async function findById(id) {
   return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
 }
 
-function listAll() {
+async function listAll() {
   return db.prepare('SELECT id, name, email, role, active, created_at FROM users ORDER BY created_at ASC').all();
 }
 
-function create({ name, email, password_hash, role }) {
-  const info = db
+async function create({ name, email, password_hash, role }) {
+  const info = await db
     .prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')
     .run(name, email.toLowerCase(), password_hash, role);
   return findById(info.lastInsertRowid);
 }
 
-function setActive(id, active) {
-  db.prepare('UPDATE users SET active = ? WHERE id = ?').run(active ? 1 : 0, id);
+async function setActive(id, active) {
+  await db.prepare('UPDATE users SET active = ? WHERE id = ?').run(active ? 1 : 0, id);
 }
 
-function updateRole(id, role) {
-  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id);
+async function updateRole(id, role) {
+  await db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id);
 }
 
-function listSupporters() {
+async function listSupporters() {
   return db
     .prepare("SELECT id, name, email FROM users WHERE active = 1 ORDER BY name ASC")
     .all();

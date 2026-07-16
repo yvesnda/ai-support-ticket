@@ -60,13 +60,13 @@ function messagesToConversation(messages) {
 // unconfigured / it fails), closed is true if the model decided — via the
 // close_ticket tool — that this ticket needs no further reply.
 async function draftReply(ticket, messages) {
-  const enabled = settingsModel.get('ai_enabled') === 'true';
+  const enabled = (await settingsModel.get('ai_enabled')) === 'true';
   const client = getClient();
   if (!enabled || !client) return { reply: null, closed: false };
 
-  const systemPrompt = settingsModel.get('ai_system_prompt');
-  const model = settingsModel.get('ai_model');
-  const toolRows = aiTools.listEnabled();
+  const systemPrompt = await settingsModel.get('ai_system_prompt');
+  const model = await settingsModel.get('ai_model');
+  const toolRows = await aiTools.listEnabled();
   const tools = [...BUILTIN_TOOLS, ...toOpenAiTools(toolRows)];
   const toolsByName = new Map(toolRows.map((r) => [r.name, r]));
 

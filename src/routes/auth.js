@@ -9,9 +9,9 @@ router.get('/login', (req, res) => {
   res.render('auth/login', { error: null });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const user = users.findByEmail(String(email || '').trim());
+  const user = await users.findByEmail(String(email || '').trim());
 
   if (!user || !user.active || !bcrypt.compareSync(password || '', user.password_hash)) {
     return res.status(401).render('auth/login', { error: 'Invalid email or password.' });

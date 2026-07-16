@@ -1,13 +1,13 @@
 require('dotenv').config({ quiet: true });
 const bcrypt = require('bcryptjs');
-const { runMigrations } = require('./src/db');
+const { init, runMigrations } = require('./src/db');
 const usersModel = require('./src/models/users');
 const pluginManager = require('./src/services/pluginManager');
 const ticketService = require('./src/services/ticketService');
 const createApp = require('./src/app');
 
-function bootstrapAdmin() {
-  if (usersModel.count() > 0) return;
+async function bootstrapAdmin() {
+  if ((await usersModel.count()) > 0) return;
 
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
@@ -19,13 +19,14 @@ function bootstrapAdmin() {
   }
 
   const password_hash = bcrypt.hashSync(password, 10);
-  usersModel.create({ name, email, password_hash, role: 'admin' });
+  await usersModel.create({ name, email, password_hash, role: 'admin' });
   console.log(`[bootstrap] created initial admin user: ${email}`);
 }
 
 async function main() {
-  runMigrations();
-  bootstrapAdmin();
+  await init();
+  await runMigrations();
+  await bootstrapAdmin();
   await pluginManager.startAll(ticketService);
 
   const app = createApp();

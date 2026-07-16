@@ -32,7 +32,7 @@ async function startAll(ticketService) {
     const mod = require(path.join(pluginsDir, name));
     loaded.set(name, { module: mod, running: false });
 
-    const settings = pluginSettingsModel.get(name);
+    const settings = await pluginSettingsModel.get(name);
     if (settings && settings.enabled) {
       await startPlugin(name, ticketService);
     }
@@ -42,7 +42,7 @@ async function startAll(ticketService) {
 async function startPlugin(name, ticketService) {
   const entry = loaded.get(name);
   if (!entry || entry.running) return;
-  const settings = pluginSettingsModel.get(name);
+  const settings = await pluginSettingsModel.get(name);
   const config = settings ? JSON.parse(settings.config_json || '{}') : {};
   try {
     await entry.module.start({ config, ticketService, logger: logger(name) });
@@ -74,12 +74,14 @@ async function sendReply(ticket, message) {
   }
 }
 
-function list() {
-  return discover().map((name) => ({
-    name,
-    running: loaded.get(name)?.running || false,
-    settings: pluginSettingsModel.get(name),
-  }));
+async function list() {
+  return Promise.all(
+    discover().map(async (name) => ({
+      name,
+      running: loaded.get(name)?.running || false,
+      settings: await pluginSettingsModel.get(name),
+    }))
+  );
 }
 
 module.exports = { startAll, startPlugin, stopPlugin, sendReply, list };

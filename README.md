@@ -25,13 +25,15 @@ Everything runs as a single Node.js process with server-rendered (EJS) views —
 ## Tech stack
 
 - Express + EJS (via `express-ejs-layouts`) for embedded, server-rendered views
-- SQLite (`better-sqlite3`) — single file, zero setup, hand-rolled migrations
+- SQLite via the `sqlite3` package — single file, zero setup, prebuilt binaries covering a wide range of platforms/Node versions so it installs without a local compiler on most systems. All DB access in this app is async (see note below)
 - `express-session` + `bcryptjs` for auth
 - `openai` SDK for AI drafting/tool calling
 - `imapflow` + `mailparser` (inbound email) and `nodemailer` (outbound email) for the email plugin
 - `dotenv` for configuration
 
 ## Getting started
+
+Works on Node 14+.
 
 ```bash
 npm install
@@ -65,8 +67,9 @@ Then:
 ```
 index.js                     # entrypoint: run migrations, bootstrap admin, start plugins, start server
 src/
-  db/                         # SQLite connection + migrations (plain .sql files, run once each)
-  models/                     # thin query wrappers: users, tickets, messages, aiTools, settings, pluginSettings
+  db/                         # sqlite3 connection wrapped in a Promise-based db.prepare(sql).get/all/run()
+                                # shim (sqlite3 has no synchronous API) + migrations (plain .sql files, run once each)
+  models/                     # thin async query wrappers: users, tickets, messages, aiTools, settings, pluginSettings
   middleware/auth.js          # requireLogin, requireRole('admin')
   routes/
     public.js                 # GET / (ticket form), POST /tickets — no auth

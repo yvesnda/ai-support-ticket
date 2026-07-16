@@ -1,7 +1,7 @@
 const { db } = require('../db');
 
-function create({ subject, customer_name, customer_email, channel = 'web', source_plugin = null, external_ref = null }) {
-  const info = db
+async function create({ subject, customer_name, customer_email, channel = 'web', source_plugin = null, external_ref = null }) {
+  const info = await db
     .prepare(
       `INSERT INTO tickets (subject, customer_name, customer_email, channel, source_plugin, external_ref)
        VALUES (?, ?, ?, ?, ?, ?)`
@@ -10,15 +10,15 @@ function create({ subject, customer_name, customer_email, channel = 'web', sourc
   return findById(info.lastInsertRowid);
 }
 
-function findById(id) {
+async function findById(id) {
   return db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
 }
 
-function findByExternalRef(external_ref) {
+async function findByExternalRef(external_ref) {
   return db.prepare('SELECT * FROM tickets WHERE external_ref = ?').get(external_ref);
 }
 
-function list({ status, assigned_to } = {}) {
+async function list({ status, assigned_to } = {}) {
   let sql = `SELECT t.*, u.name AS assigned_name
              FROM tickets t LEFT JOIN users u ON u.id = t.assigned_to WHERE 1=1`;
   const params = [];
@@ -34,16 +34,16 @@ function list({ status, assigned_to } = {}) {
   return db.prepare(sql).all(...params);
 }
 
-function touch(id) {
-  db.prepare("UPDATE tickets SET updated_at = datetime('now') WHERE id = ?").run(id);
+async function touch(id) {
+  await db.prepare("UPDATE tickets SET updated_at = datetime('now') WHERE id = ?").run(id);
 }
 
-function setStatus(id, status) {
-  db.prepare("UPDATE tickets SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
+async function setStatus(id, status) {
+  await db.prepare("UPDATE tickets SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
 }
 
-function setAssignee(id, userId) {
-  db.prepare("UPDATE tickets SET assigned_to = ?, updated_at = datetime('now') WHERE id = ?").run(userId, id);
+async function setAssignee(id, userId) {
+  await db.prepare("UPDATE tickets SET assigned_to = ?, updated_at = datetime('now') WHERE id = ?").run(userId, id);
 }
 
 module.exports = { create, findById, findByExternalRef, list, touch, setStatus, setAssignee };
