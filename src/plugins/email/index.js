@@ -52,7 +52,9 @@ async function pollOnce(ctx) {
     const mailbox = config.mailbox || 'INBOX';
     const lock = await client.getMailboxLock(mailbox);
     try {
-      const uids = await client.search({ seen: false });
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const uids = await client.search({ seen: false, since: oneMonthAgo });
       for (const uid of uids || []) {
         const raw = await client.download(uid, undefined, { uid: true });
         const chunks = [];
