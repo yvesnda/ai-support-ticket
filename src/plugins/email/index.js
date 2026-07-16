@@ -56,10 +56,19 @@ async function pollOnce(ctx) {
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
       const uids = await client.search({ seen: false, since: oneMonthAgo });
       for (const uid of uids || []) {
-        const raw = await client.download(uid, undefined, { uid: true });
-        const chunks = [];
-        for await (const chunk of raw.content) chunks.push(chunk);
-        const parsed = await simpleParser(Buffer.concat(chunks));
+        const msg = await client.fetchOne(
+          uid,
+          { source: true },
+          { uid: true }
+        );
+        console.log(msg);
+
+        if (!msg || !msg.source) {
+          console.log('No source for UID', uid);
+          continue;
+        }
+
+        const parsed = await simpleParser(msg.source);
 
         const fromAddr = parsed.from?.value?.[0]?.address || 'unknown@unknown';
         const fromName = parsed.from?.value?.[0]?.name || fromAddr;
@@ -90,7 +99,7 @@ async function pollOnce(ctx) {
       lock.release();
     }
   } finally {
-    await client.logout().catch(() => {});
+    await client.logout().catch(() => { });
   }
 }
 
