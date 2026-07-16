@@ -61,7 +61,6 @@ async function pollOnce(ctx) {
           { source: true },
           { uid: true }
         );
-        console.log(msg);
 
         if (!msg || !msg.source) {
           console.log('No source for UID', uid);
