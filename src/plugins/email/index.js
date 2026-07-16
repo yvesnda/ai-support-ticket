@@ -62,6 +62,8 @@ async function pollOnce(ctx) {
           { uid: true }
         );
 
+        await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
+
         if (!msg || !msg.source) {
           console.log('No source for UID', uid);
           continue;
@@ -91,8 +93,6 @@ async function pollOnce(ctx) {
           });
           logger.info(`created ticket #${ticket.id} from ${fromAddr}`);
         }
-
-        await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
       }
     } finally {
       lock.release();
